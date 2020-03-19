@@ -13,11 +13,11 @@ class CrossEntropyLabelSmooth(torch.nn.Module):
         epsilon (float): weight.
     """
 
-    def __init__(self, num_classes, epsilon=0.1, use_gpu=True):
+    def __init__(self, num_classes, epsilon=0.1, device=None):
         super(CrossEntropyLabelSmooth, self).__init__()
         self.num_classes = num_classes
         self.epsilon = epsilon
-        self.use_gpu = use_gpu
+        self.device = device
         self.logsoftmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, inputs, targets):
@@ -28,7 +28,7 @@ class CrossEntropyLabelSmooth(torch.nn.Module):
         """
         log_probs = self.logsoftmax(inputs)
         targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
+        if self.device is not None: targets = targets.to(self.device)
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         loss = (- targets * log_probs).mean(0).sum()
         return loss
@@ -45,11 +45,11 @@ class CrossEntropyLabelSmooth_OHEM(nn.Module):
         epsilon (float): weight.
     """
 
-    def __init__(self, num_classes, epsilon=0.1, use_gpu=True, ohem_ratio = 0.7):
+    def __init__(self, num_classes, epsilon=0.1, device=None, ohem_ratio = 0.7):
         super(CrossEntropyLabelSmooth_OHEM, self).__init__()
         self.num_classes = num_classes
         self.epsilon = epsilon
-        self.use_gpu = use_gpu
+        self.device = device
         self.ohem_ratio = ohem_ratio
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
@@ -61,7 +61,7 @@ class CrossEntropyLabelSmooth_OHEM(nn.Module):
         """
         log_probs = self.logsoftmax(inputs)
         targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
+        if self.device is not None: targets = targets.to(self.device)
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         ohem_cls_loss = (- targets * log_probs).mean(1)
 
